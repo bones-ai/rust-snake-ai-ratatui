@@ -59,8 +59,8 @@ impl Net {
 
         let mut merged_layers = Vec::new();
         for i in 0..self.layers.len() {
-            let merged_layer = &self.layers[i].merge(&other.layers[i]);
-            merged_layers.push(merged_layer.clone());
+            let merged_layer = self.layers[i].merge(&other.layers[i]);
+            merged_layers.push(merged_layer);
         }
 
         Net {
