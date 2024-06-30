@@ -26,8 +26,8 @@ pub const NN_ARCH: [usize; 4] = [24, 16, 8, 4];
 
 // Viz
 pub const IS_LOW_DETAIL_MODE: bool = false;
-pub const USE_GAME_CANVAS: bool = true;
-pub const VIZ_GAME_SCALE: i32 = 3;
+pub const USE_GAME_CANVAS: bool = false;
+pub const VIZ_GAME_SCALE: i32 = 1;
 pub const VIZ_OFFSET: i32 = 2;
 pub const VIZ_UPDATE_FRAMES: u32 = 50;
 pub const VIZ_GRAPHS_LEN: usize = 45;
