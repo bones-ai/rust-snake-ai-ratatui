@@ -28,4 +28,6 @@ cargo run --release
 
 ## Others
 - I mostly post about my projects on - [Twitter - @BonesaiDev](https://x.com/BonesaiDev)
-- Video of snake [completing](https://x.com/BonesaiDev/status/1806738659296891032) the game
+- Video of snake [completing the game](https://x.com/BonesaiDev/status/1806738659296891032)
+- Check out my other projects here - [https://bones-ai.bearblog.dev/projects/](https://bones-ai.bearblog.dev/projects/)
+- More about me - [https://bones-ai.bearblog.dev/](https://bones-ai.bearblog.dev/)
