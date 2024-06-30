@@ -29,5 +29,6 @@ cargo run --release
 ## Others
 - I mostly post about my projects on - [Twitter - @BonesaiDev](https://x.com/BonesaiDev)
 - Video of snake [completing the game](https://x.com/BonesaiDev/status/1806738659296891032)
+- More info on [how it works](https://twitter.com/BonesaiDev/status/1804941703431991473) and it's [inputs](https://twitter.com/BonesaiDev/status/1804941885158686831). I'm planning on creating a blog post where I explain stuff in a bit more detail.
 - Check out my other projects here - [https://bones-ai.bearblog.dev/projects/](https://bones-ai.bearblog.dev/projects/)
 - More about me - [https://bones-ai.bearblog.dev/](https://bones-ai.bearblog.dev/)
