@@ -40,7 +40,7 @@ impl Simulation {
 
     pub fn update(&mut self) {
         let games_alive = self.pop.update();
-        if games_alive <= 0 {
+        if games_alive == 0 {
             self.end_current_genration();
             self.start_new_generation();
         }
