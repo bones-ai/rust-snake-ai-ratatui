@@ -16,7 +16,7 @@ impl Agent {
     pub fn new(is_load: bool) -> Self {
         let brain = if is_load {
             let mut net = Net::load();
-            net.mutate();
+            net.mutate(0.0, 0.1);
             net
         } else {
             Net::new(&NN_ARCH)
@@ -63,8 +63,8 @@ impl Agent {
             fitness *= score;
             fitness *= self.game.total_steps as f32 * 0.1;
         } else {
-            fitness *= score * score;
-            fitness *= self.game.total_steps as f32;
+            fitness *= score * score * score;
+            fitness *= self.game.total_steps as f32 * 0.1;
         }
 
         fitness
@@ -72,33 +72,16 @@ impl Agent {
 
     pub fn get_brain_output(&self) -> FourDirs {
         let vision = self.get_brain_input();
-        let cur_dir = self.game.dir;
-        let nn_out = self.brain.predict(vision).last().unwrap().clone();
-        let max_index = nn_out
-            .iter()
-            .enumerate()
-            .max_by(|(_, &a), (_, &b)| a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal))
-            .map(|(i, _)| i)
-            .unwrap();
-        let dir = match max_index {
-            0 => FourDirs::Left,
-            1 => FourDirs::Right,
-            2 => FourDirs::Bottom,
-            _ => FourDirs::Top,
-        };
-
-        // Prevent the snake from turning back on itself
-        if (cur_dir.is_horizontal() && dir.is_horizontal())
-            || (cur_dir.is_vertical() && dir.is_vertical())
-        {
-            if cur_dir != dir {
-                cur_dir
-            } else {
-                dir
-            }
-        } else {
-            dir
-        }
+        let nn_out = self.brain.predict(vision);
+        let (l, r, b, t) = (nn_out[0], nn_out[1], nn_out[2], nn_out[3]);
+        let mut directions = vec![
+            (l, FourDirs::Left),
+            (r, FourDirs::Right),
+            (b, FourDirs::Bottom),
+            (t, FourDirs::Top),
+        ];
+        directions.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+        directions[0].1
     }
 
     pub fn get_brain_input(&self) -> Vec<f64> {

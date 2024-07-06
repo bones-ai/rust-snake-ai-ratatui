@@ -69,27 +69,24 @@ impl Net {
         }
     }
 
-    pub fn predict(&self, inputs: Vec<f64>) -> Vec<Vec<f64>> {
-        if inputs.len() != self.n_inputs {
-            panic!(
-                "Bad input size, expected {:?} but got {:?}",
-                self.n_inputs,
-                inputs.len()
-            );
-        }
-
-        let mut outputs = Vec::new();
-        outputs.push(inputs);
-        for (layer_index, layer) in self.layers.iter().enumerate() {
-            let layer_results = layer.predict(&outputs[layer_index]);
-            outputs.push(layer_results);
-        }
-
-        outputs
+    pub fn predict(&self, inputs: Vec<f64>) -> Vec<f64> {
+        assert!(
+            inputs.len() == self.n_inputs,
+            "Bad input size, expected {:?} but got {:?}",
+            self.n_inputs,
+            inputs.len()
+        );
+        let output = inputs;
+        self.layers
+            .iter()
+            .flat_map(|layer| layer.predict(&output))
+            .collect()
     }
 
-    pub fn mutate(&mut self) {
-        self.layers.iter_mut().for_each(|l| l.mutate());
+    pub fn mutate(&mut self, rate: f64, magnitude: f64) {
+        self.layers
+            .iter_mut()
+            .for_each(|l| l.mutate(rate, magnitude));
     }
 
     pub fn save(&self) {
@@ -191,19 +188,18 @@ impl Layer {
         layer_results
     }
 
-    fn mutate(&mut self) {
+    fn mutate(&mut self, rate: f64, magnitude: f64) {
         let mut rng = rand::thread_rng();
-
         for node in self.nodes.iter_mut() {
             for val in node.weights.iter_mut() {
-                if rng.gen::<f64>() >= BRAIN_MUTATION_RATE {
+                if rng.gen::<f64>() >= rate {
                     continue;
                 }
 
-                *val += rng.gen_range(-BRAIN_MUTATION_VARIATION..BRAIN_MUTATION_VARIATION);
+                *val += rng.gen_range(-magnitude..magnitude);
             }
-            if rng.gen::<f64>() < BRAIN_MUTATION_RATE {
-                node.bias += rng.gen_range(-BRAIN_MUTATION_VARIATION..BRAIN_MUTATION_VARIATION);
+            if rng.gen::<f64>() < rate {
+                node.bias += rng.gen_range(-magnitude..magnitude);
             }
         }
     }

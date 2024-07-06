@@ -12,6 +12,9 @@ use crate::nn::Net;
 use crate::*;
 
 pub struct Population {
+    pub mutation_magnitude: f64,
+    pub mutation_rate: f64,
+
     agents: Vec<Agent>,
 }
 
@@ -22,7 +25,12 @@ impl Population {
             agents.push(Agent::new(IS_LOAD_SAVED_DATA));
         }
 
-        Self { agents }
+        Self {
+            // rate & mag will be reset before use
+            mutation_rate: 0.1,
+            mutation_magnitude: 0.1,
+            agents,
+        }
     }
 
     pub fn update(&mut self) -> usize {
@@ -54,12 +62,12 @@ impl Population {
             let score = a.game.score();
             if score > max_score {
                 max_score = score;
-                best_net = Some(a.brain.clone());
+                best_net = Some(&a.brain);
             }
         }
 
         if let Some(net) = best_net {
-            return (net, max_score);
+            return (net.to_owned(), max_score);
         }
 
         return (Net::new(&NN_ARCH), max_score);
@@ -67,6 +75,15 @@ impl Population {
 
     fn reset_pop(&mut self) {
         let mut new_agents = Vec::with_capacity(NUM_AGENTS);
+
+        // Calc mutation rate and mag
+        let gen_max_score = self
+            .agents
+            .iter()
+            .map(|a| a.game.score())
+            .max()
+            .unwrap_or(0);
+        let (mutation_mag, mutation_rate) = self.get_mutation_params(gen_max_score as f64);
 
         // Sort agents based on their fitness
         let mut agents_sorted = self.agents.clone();
@@ -94,10 +111,10 @@ impl Population {
         if let Some(pool) = gene_pool {
             let mut rng = rand::thread_rng();
             for _ in 0..num_roulette as i32 {
-                let rand_parent_1 = self.agents[pool.sample(&mut rng)].clone();
-                let rand_parent_2 = self.agents[pool.sample(&mut rng)].clone();
+                let rand_parent_1 = &self.agents[pool.sample(&mut rng)];
+                let rand_parent_2 = &self.agents[pool.sample(&mut rng)];
                 let mut new_brain = rand_parent_1.brain.merge(&rand_parent_2.brain);
-                new_brain.mutate();
+                new_brain.mutate(mutation_rate, mutation_mag);
 
                 let new_agent = Agent::with_brain(new_brain);
                 new_agents.push(new_agent);
@@ -114,7 +131,7 @@ impl Population {
         for _ in 0..num_tournament {
             let winner = self.tournament_selection(tournament_size);
             let mut new_brain = winner.brain.clone();
-            new_brain.mutate();
+            new_brain.mutate(mutation_rate, mutation_mag);
             new_agents.push(Agent::with_brain(new_brain));
         }
 
@@ -122,7 +139,7 @@ impl Population {
         // Allows for incremental improvements to already good solutions
         for i in 0..num_mutated as usize {
             let mut old_brain = agents_sorted[i].brain.clone();
-            old_brain.mutate();
+            old_brain.mutate(mutation_rate, mutation_mag);
             new_agents.push(Agent::with_brain(old_brain));
         }
 
@@ -133,6 +150,8 @@ impl Population {
         }
 
         self.agents = new_agents;
+        self.mutation_magnitude = mutation_mag;
+        self.mutation_rate = mutation_rate;
     }
 
     fn tournament_selection(&self, tournament_size: usize) -> &Agent {
@@ -168,5 +187,16 @@ impl Population {
             .for_each(|i| *i = (*i / max_fitness) * 100.0);
 
         WeightedIndex::new(&weights).ok()
+    }
+
+    fn get_mutation_params(&self, gen_max: f64) -> (f64, f64) {
+        let max_score = ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
+        if gen_max > 0.75 * max_score {
+            (0.1, 0.15)
+        } else if gen_max > 0.5 * max_score {
+            (0.1, 0.25)
+        } else {
+            (0.5, 0.15)
+        }
     }
 }

@@ -34,7 +34,7 @@ impl Simulation {
         })
     }
 
-    pub fn terminate(&self) -> io::Result<()> {
+    pub fn stop(&self) -> io::Result<()> {
         Viz::restore_terminal()
     }
 
@@ -46,6 +46,9 @@ impl Simulation {
         }
 
         self.viz.update();
+    }
+
+    pub fn draw(&mut self) {
         self.viz.draw();
     }
 
@@ -68,7 +71,8 @@ impl Simulation {
             gen_max_score,
             sim_max_score: self.max_score,
         };
-        self.viz.update_summary(stats);
+        self.viz
+            .update_summary(stats, self.pop.mutation_rate, self.pop.mutation_magnitude);
         self.gen_start_ts = Instant::now();
     }
 }

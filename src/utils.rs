@@ -50,22 +50,6 @@ impl FourDirs {
         }
     }
 
-    pub fn is_horizontal(&self) -> bool {
-        match self {
-            FourDirs::Left => true,
-            FourDirs::Right => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_vertical(&self) -> bool {
-        match self {
-            FourDirs::Top => true,
-            FourDirs::Bottom => true,
-            _ => false,
-        }
-    }
-
     pub fn get_one_hot_dir(&self) -> Vec<f64> {
         match self {
             FourDirs::Left => vec![1.0, 0.0, 0.0, 0.0],

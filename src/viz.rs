@@ -14,6 +14,7 @@ use ratatui::widgets::canvas::{Canvas, Painter, Shape};
 use ratatui::widgets::{
     Block, BorderType, Borders, Gauge, List, ListItem, Padding, Paragraph, Sparkline,
 };
+use symbols::Marker;
 
 use crate::agent::Agent;
 use crate::game::Game;
@@ -53,6 +54,8 @@ struct VizData {
     sim_start_ts: Instant,
     scores: Vec<u64>,
     gen_times: Vec<u64>,
+    mutation_rate: f64,
+    mutation_magnitude: f64,
 }
 
 impl Viz {
@@ -68,8 +71,10 @@ impl Viz {
         self.data.agent = Some(Agent::with_brain(new_brain));
     }
 
-    pub fn update_summary(&mut self, stats: GenerationSummary) {
+    pub fn update_summary(&mut self, stats: GenerationSummary, mr: f64, mg: f64) {
         self.data.stats = stats;
+        self.data.mutation_rate = mr;
+        self.data.mutation_magnitude = mg;
 
         self.data.scores.push(stats.gen_max_score as u64);
         self.data
@@ -150,8 +155,8 @@ impl TermViz {
         let game_viz_vertical =
             Layout::vertical([Constraint::Percentage(100), Constraint::Percentage(0)]);
         let stats_viz_vertical = Layout::vertical([
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
+            Constraint::Percentage(25),
+            Constraint::Percentage(15),
             Constraint::Percentage(10),
             Constraint::Percentage(10),
             Constraint::Percentage(20),
@@ -179,7 +184,12 @@ impl TermViz {
             gen_times_graph,
         );
         f.render_widget(
-            TermViz::render_sim_stats(&viz.stats, &viz.sim_start_ts),
+            TermViz::render_sim_stats(
+                &viz.stats,
+                &viz.sim_start_ts,
+                viz.mutation_rate,
+                viz.mutation_magnitude,
+            ),
             sim_summary,
         );
         f.render_widget(TermViz::render_viz_stats(agent), viz_summary);
@@ -216,12 +226,17 @@ impl TermViz {
             agent.game.no_food_steps,
             agent.get_step_limit()
         );
-        let items = vec!["".to_string(), current_score, fitness, fsteps];
+        let items = vec![current_score, fitness, fsteps];
 
         TermViz::widget_stats_block(title, items)
     }
 
-    fn render_sim_stats(stats: &GenerationSummary, sim_start_ts: &Instant) -> impl Widget {
+    fn render_sim_stats(
+        stats: &GenerationSummary,
+        sim_start_ts: &Instant,
+        mutation_rate: f64,
+        mutation_magnitude: f64,
+    ) -> impl Widget {
         let title = "  S I M    S T A T S  ";
         let elapsed = sim_start_ts.elapsed().as_secs_f32() / 60.0;
         let max_score = (GRID_SIZE - 1) * (GRID_SIZE - 1);
@@ -229,6 +244,9 @@ impl TermViz {
             "".to_string(),
             format!("Gen: {0}", stats.gen_count),
             format!("Sim Max: {0}/{1}", stats.sim_max_score, max_score),
+            format!("Gen Max: {0}/{1}", stats.gen_max_score, max_score),
+            format!("Mutation Rate: {0}", mutation_rate),
+            format!("Mutation Magnitude: {0}", mutation_magnitude),
             format!("Gen Max: {0}/{1}", stats.gen_max_score, max_score),
             format!("Gen Ts: {:.2} secs", stats.time_elapsed_secs),
             format!("Sim Ts: {:.2} mins", elapsed),
@@ -242,7 +260,6 @@ impl TermViz {
         let items = vec![
             format!("Num Agents: {NUM_AGENTS}"),
             format!("Step Limit: {NUM_STEPS}"),
-            format!("Mutation Rate: {BRAIN_MUTATION_RATE}"),
             format!("Net Arch: {:?}", NN_ARCH),
             format!("Save Net: {IS_SAVE_BEST_NET}"),
             format!("Load Net: {IS_LOAD_SAVED_DATA}"),
@@ -318,20 +335,22 @@ impl TermViz {
     fn get_simple_render_text(viz: &VizData) -> String {
         let max_score = (GRID_SIZE - 1) * (GRID_SIZE - 1);
         let mut message = format!(
-            "Gen: {:?}, Max: {:?}/{:?}, Gen_Max: {:?}/{:?}, Ts: {:.2?}, Sim_Ts: {:.2?}\n\n",
+            "Gen: {:?}, Max: {:?}/{:?}, Gen_Max: {:?}/{:?}, Ts: {:.2?}, Sim_Ts: {:.2?}\nMR: {:.2?}, MG: {:.2?}\n\n",
             viz.stats.gen_count,
             viz.stats.sim_max_score,
             max_score,
             viz.stats.gen_max_score,
             max_score,
             viz.stats.time_elapsed_secs,
-            (viz.sim_start_ts.elapsed().as_secs_f32() / 60.0)
+            (viz.sim_start_ts.elapsed().as_secs_f32() / 60.0),
+            viz.mutation_rate,
+            viz.mutation_magnitude
         );
 
         // Game Render
         if let Some(agent) = &viz.agent {
             let game = &agent.game;
-            message.push_str(TermViz::get_block_game_string(game).as_str());
+            message.push_str(&TermViz::get_block_game_string(game));
 
             // Viz stats
             message.push_str("\n\n");
@@ -587,27 +606,22 @@ impl TermViz {
             for y in 0..=GRID_SIZE {
                 let pt = (x, y).into();
                 if game.food == pt {
-                    line_spans.push(Span::styled(
-                        "██", Style::default().fg(COLOR_FOOD)));
+                    line_spans.push(Span::styled("██", Style::default().fg(COLOR_FOOD)));
                     continue;
                 }
                 if game.is_wall(pt) {
-                    line_spans.push(Span::styled(
-                        "██", Style::default().fg(COLOR_WALLS)));
+                    line_spans.push(Span::styled("██", Style::default().fg(COLOR_WALLS)));
                     continue;
                 }
                 if game.is_snake_body(pt) {
-                    line_spans.push(Span::styled(
-                        "██", Style::default().fg(body_color)));
+                    line_spans.push(Span::styled("██", Style::default().fg(body_color)));
                     continue;
                 }
                 if game.head == pt {
-                    line_spans.push(Span::styled(
-                        "██", Style::default().fg(head_color)));
+                    line_spans.push(Span::styled("██", Style::default().fg(head_color)));
                     continue;
                 }
-                line_spans.push(Span::styled(
-                    "  ", Style::default()));
+                line_spans.push(Span::styled("  ", Style::default()));
             }
             lines.push(Line::from(line_spans));
         }
@@ -676,6 +690,8 @@ impl Default for VizData {
             sim_start_ts: Instant::now(),
             scores: Vec::new(),
             gen_times: Vec::new(),
+            mutation_magnitude: 0.0,
+            mutation_rate: 0.0,
         }
     }
 }
