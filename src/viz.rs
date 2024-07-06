@@ -241,7 +241,6 @@ impl TermViz {
         let elapsed = sim_start_ts.elapsed().as_secs_f32() / 60.0;
         let max_score = (GRID_SIZE - 1) * (GRID_SIZE - 1);
         let items = vec![
-            "".to_string(),
             format!("Gen: {0}", stats.gen_count),
             format!("Sim Max: {0}/{1}", stats.sim_max_score, max_score),
             format!("Gen Max: {0}/{1}", stats.gen_max_score, max_score),
