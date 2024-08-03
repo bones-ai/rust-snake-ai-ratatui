@@ -32,7 +32,8 @@ struct Node {
 }
 
 impl Net {
-    #[must_use] pub fn new(layer_sizes: &[usize]) -> Self {
+    #[must_use]
+    pub fn new(layer_sizes: &[usize]) -> Self {
         assert!(layer_sizes.len() >= 2, "Need at least 2 layers");
         assert!(
             layer_sizes.iter().all(|&size| size > 0),
@@ -54,7 +55,8 @@ impl Net {
         }
     }
 
-    #[must_use] pub fn merge(&self, other: &Net) -> Self {
+    #[must_use]
+    pub fn merge(&self, other: &Net) -> Self {
         assert_eq!(self.layers.len(), other.layers.len());
 
         let mut merged_layers = Vec::new();
@@ -69,7 +71,8 @@ impl Net {
         }
     }
 
-    #[must_use] pub fn predict(&self, inputs: Vec<f64>) -> Vec<f64> {
+    #[must_use]
+    pub fn predict(&self, inputs: Vec<f64>) -> Vec<f64> {
         assert!(
             inputs.len() == self.n_inputs,
             "Bad input size, expected {:?} but got {:?}",
@@ -112,7 +115,8 @@ impl Net {
             .expect("Failed to write to network file");
     }
 
-    #[must_use] pub fn load() -> Self {
+    #[must_use]
+    pub fn load() -> Self {
         let mut file = File::open(LOAD_FILE_NAME).unwrap();
         let mut buff = String::new();
         file.read_to_string(&mut buff).unwrap();
@@ -120,7 +124,8 @@ impl Net {
     }
 
     // This is for visualization
-    #[must_use] pub fn get_bias(&self, layer_idx: usize) -> Vec<f64> {
+    #[must_use]
+    pub fn get_bias(&self, layer_idx: usize) -> Vec<f64> {
         let mut res = Vec::new();
         for node in &self.layers[layer_idx].nodes {
             res.push(node.bias);
