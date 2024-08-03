@@ -15,6 +15,12 @@ pub struct Game {
     pub no_food_steps: usize,
 }
 
+impl Default for Game {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Game {
     pub fn new() -> Self {
         let head = Point::new(GRID_SIZE / 2, GRID_SIZE / 2);

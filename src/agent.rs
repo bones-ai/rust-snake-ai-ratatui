@@ -59,7 +59,7 @@ impl Agent {
 
         let mut fitness = 1.0;
         if score < 5.0 {
-            fitness *= (2.0 as f32).powf(score);
+            fitness *= 2.0_f32.powf(score);
             fitness *= score;
             fitness *= self.game.total_steps as f32 * 0.1;
         } else {
@@ -74,12 +74,10 @@ impl Agent {
         let vision = self.get_brain_input();
         let nn_out = self.brain.predict(vision);
         let (l, r, b, t) = (nn_out[0], nn_out[1], nn_out[2], nn_out[3]);
-        let mut directions = vec![
-            (l, FourDirs::Left),
+        let mut directions = [(l, FourDirs::Left),
             (r, FourDirs::Right),
             (b, FourDirs::Bottom),
-            (t, FourDirs::Top),
-        ];
+            (t, FourDirs::Top)];
         directions.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
         directions[0].1
     }
@@ -92,8 +90,8 @@ impl Agent {
 
         vision
             .into_iter()
-            .chain(head_dir.into_iter())
-            .chain(tail_dir.into_iter())
+            .chain(head_dir)
+            .chain(tail_dir)
             .collect()
     }
 

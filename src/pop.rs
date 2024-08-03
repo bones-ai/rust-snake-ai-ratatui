@@ -18,6 +18,12 @@ pub struct Population {
     agents: Vec<Agent>,
 }
 
+impl Default for Population {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Population {
     pub fn new() -> Self {
         let mut agents = Vec::new();
@@ -70,7 +76,7 @@ impl Population {
             return (net.to_owned(), max_score);
         }
 
-        return (Net::new(&NN_ARCH), max_score);
+        (Net::new(&NN_ARCH), max_score)
     }
 
     fn reset_pop(&mut self) {
@@ -99,7 +105,7 @@ impl Population {
         // Elitism
         // Preserve best performing agents
         // Hels maintain high fitness levels within the population
-        for i in 0..num_elite as usize {
+        for i in 0..num_elite {
             let old_brain = agents_sorted[i].brain.clone();
             let new_agent = Agent::with_brain(old_brain);
             new_agents.push(new_agent);
@@ -137,7 +143,7 @@ impl Population {
 
         // Mutational Elitism
         // Allows for incremental improvements to already good solutions
-        for i in 0..num_mutated as usize {
+        for i in 0..num_mutated {
             let mut old_brain = agents_sorted[i].brain.clone();
             old_brain.mutate(mutation_rate, mutation_mag);
             new_agents.push(Agent::with_brain(old_brain));

@@ -66,7 +66,7 @@ impl Point {
     }
 
     pub fn equals(&self, other: Self) -> bool {
-        return self.x == other.x && self.y == other.y;
+        self.x == other.x && self.y == other.y
     }
 
     pub fn rand() -> Self {
@@ -79,11 +79,11 @@ impl Point {
 }
 
 // Tuple to point
-impl Into<Point> for (i32, i32) {
-    fn into(self) -> Point {
+impl From<(i32, i32)> for Point {
+    fn from(val: (i32, i32)) -> Self {
         Point {
-            x: self.0,
-            y: self.1,
+            x: val.0,
+            y: val.1,
         }
     }
 }

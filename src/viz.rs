@@ -138,7 +138,7 @@ impl TermViz {
 
         if IS_LOW_DETAIL_MODE {
             f.render_widget(
-                TermViz::widget_raw_text(TermViz::get_simple_render_text(&viz)),
+                TermViz::widget_raw_text(TermViz::get_simple_render_text(viz)),
                 f.size(),
             );
             return;
@@ -202,12 +202,12 @@ impl TermViz {
         }
     }
 
-    fn render_game_canvas<'a>(game: &'a Game) -> impl Widget + 'a {
+    fn render_game_canvas(game: &Game) -> impl Widget + '_ {
         Canvas::default()
             .block(Block::new())
             .marker(Marker::HalfBlock)
             .paint(move |ctx| {
-                ctx.draw(&GameRender { game: &game });
+                ctx.draw(&GameRender { game });
             })
             .x_bounds([0.0, 100.0])
             .y_bounds([0.0, 100.0])
@@ -269,11 +269,11 @@ impl TermViz {
         TermViz::widget_stats_block(title, items)
     }
 
-    fn render_score_graph<'a>(data: &'a [u64]) -> impl Widget + 'a {
+    fn render_score_graph(data: &[u64]) -> impl Widget + '_ {
         TermViz::widget_sparkline(data, "  G E N    S C O R E S  ", Color::LightGreen)
     }
 
-    fn render_gen_times_graph<'a>(data: &'a [u64]) -> impl Widget + 'a {
+    fn render_gen_times_graph(data: &[u64]) -> impl Widget + '_ {
         TermViz::widget_sparkline(data, "  G E N    T I M E S  ", Color::LightCyan)
     }
 
@@ -291,7 +291,7 @@ impl TermViz {
         TermViz::widget_gauge(ratio, title, Color::LightRed)
     }
 
-    fn widget_stats_block<'a>(title: &'a str, items: Vec<String>) -> impl Widget + 'a {
+    fn widget_stats_block(title: &str, items: Vec<String>) -> impl Widget + '_ {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::Plain)
@@ -315,7 +315,7 @@ impl TermViz {
             .style(Style::default().fg(color))
     }
 
-    fn widget_gauge<'a>(ratio: f64, title: &'a str, color: Color) -> impl Widget + 'a {
+    fn widget_gauge(ratio: f64, title: &str, color: Color) -> impl Widget + '_ {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::Plain)
@@ -663,13 +663,13 @@ impl<'a> GameRender<'a> {
             false => COLOR_HEAD,
         };
         for &segment in &self.game.body {
-            self.draw_rect(painter, segment.into(), body_color);
+            self.draw_rect(painter, segment, body_color);
         }
-        self.draw_rect(painter, self.game.head.into(), head_color);
+        self.draw_rect(painter, self.game.head, head_color);
     }
 
     fn draw_food(&self, painter: &mut Painter) {
-        self.draw_rect(painter, self.game.food.into(), COLOR_FOOD);
+        self.draw_rect(painter, self.game.food, COLOR_FOOD);
     }
 }
 
