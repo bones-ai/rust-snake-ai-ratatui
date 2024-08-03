@@ -74,10 +74,12 @@ impl Agent {
         let vision = self.get_brain_input();
         let nn_out = self.brain.predict(vision);
         let (l, r, b, t) = (nn_out[0], nn_out[1], nn_out[2], nn_out[3]);
-        let mut directions = [(l, FourDirs::Left),
+        let mut directions = [
+            (l, FourDirs::Left),
             (r, FourDirs::Right),
             (b, FourDirs::Bottom),
-            (t, FourDirs::Top)];
+            (t, FourDirs::Top),
+        ];
         directions.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
         directions[0].1
     }
@@ -88,11 +90,7 @@ impl Agent {
         let head_dir = self.game.dir.get_one_hot_dir();
         let tail_dir = self.get_tail_direction().get_one_hot_dir();
 
-        vision
-            .into_iter()
-            .chain(head_dir)
-            .chain(tail_dir)
-            .collect()
+        vision.into_iter().chain(head_dir).chain(tail_dir).collect()
     }
 
     fn get_snake_vision(&self, dirs: Vec<(i32, i32)>) -> Vec<f64> {

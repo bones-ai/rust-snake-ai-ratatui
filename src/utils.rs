@@ -81,10 +81,7 @@ impl Point {
 // Tuple to point
 impl From<(i32, i32)> for Point {
     fn from(val: (i32, i32)) -> Self {
-        Point {
-            x: val.0,
-            y: val.1,
-        }
+        Point { x: val.0, y: val.1 }
     }
 }
 
