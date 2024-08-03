@@ -173,7 +173,7 @@ impl Layer {
         Self { nodes }
     }
 
-    fn predict(&self, inputs: &Vec<f64>) -> Vec<f64> {
+    fn predict(&self, inputs: &[f64]) -> Vec<f64> {
         let mut layer_results = Vec::new();
         for node in self.nodes.iter() {
             let mut weighted_sum = node.bias;

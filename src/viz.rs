@@ -279,14 +279,14 @@ impl TermViz {
 
     fn render_viz_score_gauge(score: usize) -> impl Widget {
         let ratio = score as f64 / ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
-        let ratio = ratio.min(1.0).max(0.0);
+        let ratio = ratio.clamp(0.0, 1.0);
         let title = "  V I Z    S C O R E  ";
         TermViz::widget_gauge(ratio, title, Color::LightMagenta)
     }
 
     fn render_max_score_gauge(score: usize) -> impl Widget {
         let ratio = score as f64 / ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
-        let ratio = ratio.min(1.0).max(0.0);
+        let ratio = ratio.clamp(0.0, 1.0);
         let title = "  M A X    S C O R E  ";
         TermViz::widget_gauge(ratio, title, Color::LightRed)
     }
@@ -464,8 +464,6 @@ impl TermViz {
             // Even nodes - solid collision values
             if *val >= 1.0 {
                 inp_colors.push(Color::LightMagenta);
-            } else if *val >= 0.5 {
-                inp_colors.push(Color::Indexed(104));
             } else if *val >= 0.15 {
                 inp_colors.push(Color::Indexed(104));
             } else {

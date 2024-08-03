@@ -80,8 +80,6 @@ impl Population {
     }
 
     fn reset_pop(&mut self) {
-        let mut new_agents = Vec::with_capacity(NUM_AGENTS);
-
         // Calc mutation rate and mag
         let gen_max_score = self
             .agents
@@ -105,11 +103,13 @@ impl Population {
         // Elitism
         // Preserve best performing agents
         // Hels maintain high fitness levels within the population
-        for i in 0..num_elite {
-            let old_brain = agents_sorted[i].brain.clone();
-            let new_agent = Agent::with_brain(old_brain);
-            new_agents.push(new_agent);
-        }
+        let mut new_agents: Vec<_> = agents_sorted
+            .iter()
+            .take(num_elite)
+            .map(|agent| Agent::with_brain(agent.brain.clone()))
+            .collect();
+
+        new_agents.reserve(NUM_AGENTS - num_elite);
 
         // Roulette Selection (or Fitness Proportionate Selection)
         // Each agent is selected with a probability proportional to its fitness
@@ -143,17 +143,20 @@ impl Population {
 
         // Mutational Elitism
         // Allows for incremental improvements to already good solutions
-        for i in 0..num_mutated {
-            let mut old_brain = agents_sorted[i].brain.clone();
+        new_agents.extend(agents_sorted.iter().take(num_mutated).map(|agent| {
+            let mut old_brain = agent.brain.clone();
             old_brain.mutate(mutation_rate, mutation_mag);
-            new_agents.push(Agent::with_brain(old_brain));
-        }
+            Agent::with_brain(old_brain)
+        }));
 
         // Full random
         // Diversify the gene pool
-        for _ in 0..num_random as i32 {
-            new_agents.push(Agent::new(false));
-        }
+        new_agents.extend(
+            self.agents
+                .iter()
+                .take(num_random)
+                .map(|_| Agent::new(false)),
+        );
 
         self.agents = new_agents;
         self.mutation_magnitude = mutation_mag;
