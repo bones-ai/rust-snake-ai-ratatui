@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::*;
+use crate::GRID_SIZE;
 
 #[derive(Default, PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Point {
@@ -17,6 +17,7 @@ pub enum FourDirs {
     Top,
 }
 
+#[must_use]
 pub fn get_eight_dirs() -> [(i32, i32); 8] {
     [
         FourDirs::Left.value(),
@@ -31,6 +32,7 @@ pub fn get_eight_dirs() -> [(i32, i32); 8] {
 }
 
 impl FourDirs {
+    #[must_use]
     pub fn get_rand_dir() -> Self {
         let mut rng = rand::thread_rng();
         match rng.gen_range(0..4) {
@@ -41,6 +43,7 @@ impl FourDirs {
         }
     }
 
+    #[must_use]
     pub fn value(&self) -> (i32, i32) {
         match self {
             Self::Left => (-1, 0),
@@ -50,6 +53,7 @@ impl FourDirs {
         }
     }
 
+    #[must_use]
     pub fn get_one_hot_dir(&self) -> Vec<f64> {
         match self {
             FourDirs::Left => vec![1.0, 0.0, 0.0, 0.0],
@@ -61,14 +65,17 @@ impl FourDirs {
 }
 
 impl Point {
+    #[must_use]
     pub fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 
+    #[must_use]
     pub fn equals(&self, other: Self) -> bool {
-        return self.x == other.x && self.y == other.y;
+        self.x == other.x && self.y == other.y
     }
 
+    #[must_use]
     pub fn rand() -> Self {
         let mut rng = rand::thread_rng();
         Self {
@@ -79,12 +86,9 @@ impl Point {
 }
 
 // Tuple to point
-impl Into<Point> for (i32, i32) {
-    fn into(self) -> Point {
-        Point {
-            x: self.0,
-            y: self.1,
-        }
+impl From<(i32, i32)> for Point {
+    fn from(val: (i32, i32)) -> Self {
+        Point { x: val.0, y: val.1 }
     }
 }
 

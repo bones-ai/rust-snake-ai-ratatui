@@ -4,7 +4,7 @@ use std::{io, time::Instant};
 use crossterm::event::{self, Event, KeyCode};
 
 use sim::Simulation;
-use snake_tui::*;
+use snake_tui::{sim, NUM_THREADS};
 
 fn main() -> io::Result<()> {
     rayon::ThreadPoolBuilder::new()

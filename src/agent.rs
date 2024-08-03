@@ -4,7 +4,7 @@
 use nn::Net;
 
 use crate::game::Game;
-use crate::*;
+use crate::{get_eight_dirs, nn, FourDirs, Point, NN_ARCH, NUM_STEPS};
 
 #[derive(Clone)]
 pub struct Agent {
@@ -13,6 +13,7 @@ pub struct Agent {
 }
 
 impl Agent {
+    #[must_use]
     pub fn new(is_load: bool) -> Self {
         let brain = if is_load {
             let mut net = Net::load();
@@ -28,6 +29,7 @@ impl Agent {
         }
     }
 
+    #[must_use]
     pub fn with_brain(brain: Net) -> Self {
         Self {
             game: Game::new(),
@@ -51,6 +53,7 @@ impl Agent {
         true
     }
 
+    #[must_use]
     pub fn fitness(&self) -> f32 {
         let score = self.game.body.len() as f32;
         if score <= 1.0 {
@@ -59,7 +62,7 @@ impl Agent {
 
         let mut fitness = 1.0;
         if score < 5.0 {
-            fitness *= (2.0 as f32).powf(score);
+            fitness *= 2.0_f32.powf(score);
             fitness *= score;
             fitness *= self.game.total_steps as f32 * 0.1;
         } else {
@@ -70,11 +73,12 @@ impl Agent {
         fitness
     }
 
+    #[must_use]
     pub fn get_brain_output(&self) -> FourDirs {
         let vision = self.get_brain_input();
         let nn_out = self.brain.predict(vision);
         let (l, r, b, t) = (nn_out[0], nn_out[1], nn_out[2], nn_out[3]);
-        let mut directions = vec![
+        let mut directions = [
             (l, FourDirs::Left),
             (r, FourDirs::Right),
             (b, FourDirs::Bottom),
@@ -84,17 +88,14 @@ impl Agent {
         directions[0].1
     }
 
+    #[must_use]
     pub fn get_brain_input(&self) -> Vec<f64> {
         let dirs = get_eight_dirs().to_vec();
         let vision = self.get_snake_vision(dirs);
         let head_dir = self.game.dir.get_one_hot_dir();
         let tail_dir = self.get_tail_direction().get_one_hot_dir();
 
-        vision
-            .into_iter()
-            .chain(head_dir.into_iter())
-            .chain(tail_dir.into_iter())
-            .collect()
+        vision.into_iter().chain(head_dir).chain(tail_dir).collect()
     }
 
     fn get_snake_vision(&self, dirs: Vec<(i32, i32)>) -> Vec<f64> {
@@ -102,9 +103,9 @@ impl Agent {
 
         for d in dirs {
             // Food and Body are one hot
-            let (solid, _food) = self.vision_in_dir(self.game.head, d);
-            vision.push(solid as f64);
-            vision.push(if _food { 1.0 } else { 0.0 });
+            let (solid, food) = self.vision_in_dir(self.game.head, d);
+            vision.push(f64::from(solid));
+            vision.push(if food { 1.0 } else { 0.0 });
         }
 
         vision
@@ -135,6 +136,7 @@ impl Agent {
         (1.0 / dist as f32, food)
     }
 
+    #[must_use]
     pub fn get_step_limit(&self) -> usize {
         match self.game.score() {
             score if score > 30 => NUM_STEPS * 6,

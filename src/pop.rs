@@ -9,7 +9,10 @@ use rayon::prelude::*;
 
 use crate::agent::Agent;
 use crate::nn::Net;
-use crate::*;
+use crate::{
+    GRID_SIZE, IS_LOAD_SAVED_DATA, NN_ARCH, NUM_AGENTS, POP_NUM_RANDOM, POP_RETAINED,
+    POP_RETAINED_MUTATED, POP_ROULETTE, POP_TOURNAMENT,
+};
 
 pub struct Population {
     pub mutation_magnitude: f64,
@@ -18,7 +21,14 @@ pub struct Population {
     agents: Vec<Agent>,
 }
 
+impl Default for Population {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Population {
+    #[must_use]
     pub fn new() -> Self {
         let mut agents = Vec::new();
         for _ in 0..NUM_AGENTS {
@@ -39,11 +49,7 @@ impl Population {
             .par_iter_mut()
             .map(|a| {
                 a.update();
-                if a.game.is_dead {
-                    1
-                } else {
-                    0
-                }
+                usize::from(a.game.is_dead)
             })
             .sum::<usize>();
 
@@ -54,11 +60,12 @@ impl Population {
         self.reset_pop();
     }
 
+    #[must_use]
     pub fn get_gen_summary(&self) -> (Net, usize) {
         let mut max_score = 0;
         let mut best_net = None;
 
-        for a in self.agents.iter() {
+        for a in &self.agents {
             let score = a.game.score();
             if score > max_score {
                 max_score = score;
@@ -70,12 +77,10 @@ impl Population {
             return (net.to_owned(), max_score);
         }
 
-        return (Net::new(&NN_ARCH), max_score);
+        (Net::new(&NN_ARCH), max_score)
     }
 
     fn reset_pop(&mut self) {
-        let mut new_agents = Vec::with_capacity(NUM_AGENTS);
-
         // Calc mutation rate and mag
         let gen_max_score = self
             .agents
@@ -83,7 +88,7 @@ impl Population {
             .map(|a| a.game.score())
             .max()
             .unwrap_or(0);
-        let (mutation_mag, mutation_rate) = self.get_mutation_params(gen_max_score as f64);
+        let (mutation_mag, mutation_rate) = Self::get_mutation_params(gen_max_score as f64);
 
         // Sort agents based on their fitness
         let mut agents_sorted = self.agents.clone();
@@ -99,11 +104,13 @@ impl Population {
         // Elitism
         // Preserve best performing agents
         // Hels maintain high fitness levels within the population
-        for i in 0..num_elite as usize {
-            let old_brain = agents_sorted[i].brain.clone();
-            let new_agent = Agent::with_brain(old_brain);
-            new_agents.push(new_agent);
-        }
+        let mut new_agents: Vec<_> = agents_sorted
+            .iter()
+            .take(num_elite)
+            .map(|agent| Agent::with_brain(agent.brain.clone()))
+            .collect();
+
+        new_agents.reserve(NUM_AGENTS - num_elite);
 
         // Roulette Selection (or Fitness Proportionate Selection)
         // Each agent is selected with a probability proportional to its fitness
@@ -137,17 +144,20 @@ impl Population {
 
         // Mutational Elitism
         // Allows for incremental improvements to already good solutions
-        for i in 0..num_mutated as usize {
-            let mut old_brain = agents_sorted[i].brain.clone();
+        new_agents.extend(agents_sorted.iter().take(num_mutated).map(|agent| {
+            let mut old_brain = agent.brain.clone();
             old_brain.mutate(mutation_rate, mutation_mag);
-            new_agents.push(Agent::with_brain(old_brain));
-        }
+            Agent::with_brain(old_brain)
+        }));
 
         // Full random
         // Diversify the gene pool
-        for _ in 0..num_random as i32 {
-            new_agents.push(Agent::new(false));
-        }
+        new_agents.extend(
+            self.agents
+                .iter()
+                .take(num_random)
+                .map(|_| Agent::new(false)),
+        );
 
         self.agents = new_agents;
         self.mutation_magnitude = mutation_mag;
@@ -172,7 +182,7 @@ impl Population {
         let mut max_fitness = 0.0;
         let mut weights = Vec::new();
 
-        for a in self.agents.iter() {
+        for a in &self.agents {
             let fitness = a.fitness();
             if fitness > max_fitness {
                 max_fitness = fitness;
@@ -189,8 +199,8 @@ impl Population {
         WeightedIndex::new(&weights).ok()
     }
 
-    fn get_mutation_params(&self, gen_max: f64) -> (f64, f64) {
-        let max_score = ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
+    fn get_mutation_params(gen_max: f64) -> (f64, f64) {
+        let max_score = f64::from((GRID_SIZE - 1) * (GRID_SIZE - 1));
         if gen_max > 0.75 * max_score {
             (0.1, 0.15)
         } else if gen_max > 0.5 * max_score {

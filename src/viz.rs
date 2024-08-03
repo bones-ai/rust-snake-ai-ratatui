@@ -20,7 +20,11 @@ use crate::agent::Agent;
 use crate::game::Game;
 use crate::nn::Net;
 use crate::sim::GenerationSummary;
-use crate::*;
+use crate::{
+    FourDirs, Point, GRID_SIZE, IS_LOAD_SAVED_DATA, IS_LOW_DETAIL_MODE, IS_SAVE_BEST_NET, NN_ARCH,
+    NUM_AGENTS, NUM_STEPS, USE_GAME_CANVAS, VIZ_GAME_SCALE, VIZ_GRAPHS_LEN, VIZ_OFFSET,
+    VIZ_UPDATE_FRAMES,
+};
 
 const COLOR_WALLS: Color = Color::Indexed(137);
 const COLOR_BODY: Color = Color::Indexed(140);
@@ -138,7 +142,7 @@ impl TermViz {
 
         if IS_LOW_DETAIL_MODE {
             f.render_widget(
-                TermViz::widget_raw_text(TermViz::get_simple_render_text(&viz)),
+                TermViz::widget_raw_text(TermViz::get_simple_render_text(viz)),
                 f.size(),
             );
             return;
@@ -202,12 +206,12 @@ impl TermViz {
         }
     }
 
-    fn render_game_canvas<'a>(game: &'a Game) -> impl Widget + 'a {
+    fn render_game_canvas(game: &Game) -> impl Widget + '_ {
         Canvas::default()
             .block(Block::new())
             .marker(Marker::HalfBlock)
             .paint(move |ctx| {
-                ctx.draw(&GameRender { game: &game });
+                ctx.draw(&GameRender { game });
             })
             .x_bounds([0.0, 100.0])
             .y_bounds([0.0, 100.0])
@@ -262,36 +266,36 @@ impl TermViz {
             format!("Net Arch: {:?}", NN_ARCH),
             format!("Save Net: {IS_SAVE_BEST_NET}"),
             format!("Load Net: {IS_LOAD_SAVED_DATA}"),
-            "".to_string(),
+            String::new(),
             "Press [ESC] to quit".to_string(),
         ];
 
         TermViz::widget_stats_block(title, items)
     }
 
-    fn render_score_graph<'a>(data: &'a [u64]) -> impl Widget + 'a {
+    fn render_score_graph(data: &[u64]) -> impl Widget + '_ {
         TermViz::widget_sparkline(data, "  G E N    S C O R E S  ", Color::LightGreen)
     }
 
-    fn render_gen_times_graph<'a>(data: &'a [u64]) -> impl Widget + 'a {
+    fn render_gen_times_graph(data: &[u64]) -> impl Widget + '_ {
         TermViz::widget_sparkline(data, "  G E N    T I M E S  ", Color::LightCyan)
     }
 
     fn render_viz_score_gauge(score: usize) -> impl Widget {
-        let ratio = score as f64 / ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
-        let ratio = ratio.min(1.0).max(0.0);
+        let ratio = score as f64 / f64::from((GRID_SIZE - 1) * (GRID_SIZE - 1));
+        let ratio = ratio.clamp(0.0, 1.0);
         let title = "  V I Z    S C O R E  ";
         TermViz::widget_gauge(ratio, title, Color::LightMagenta)
     }
 
     fn render_max_score_gauge(score: usize) -> impl Widget {
-        let ratio = score as f64 / ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
-        let ratio = ratio.min(1.0).max(0.0);
+        let ratio = score as f64 / f64::from((GRID_SIZE - 1) * (GRID_SIZE - 1));
+        let ratio = ratio.clamp(0.0, 1.0);
         let title = "  M A X    S C O R E  ";
         TermViz::widget_gauge(ratio, title, Color::LightRed)
     }
 
-    fn widget_stats_block<'a>(title: &'a str, items: Vec<String>) -> impl Widget + 'a {
+    fn widget_stats_block(title: &str, items: Vec<String>) -> impl Widget + '_ {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::Plain)
@@ -315,7 +319,7 @@ impl TermViz {
             .style(Style::default().fg(color))
     }
 
-    fn widget_gauge<'a>(ratio: f64, title: &'a str, color: Color) -> impl Widget + 'a {
+    fn widget_gauge(ratio: f64, title: &str, color: Color) -> impl Widget + '_ {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::Plain)
@@ -464,8 +468,6 @@ impl TermViz {
             // Even nodes - solid collision values
             if *val >= 1.0 {
                 inp_colors.push(Color::LightMagenta);
-            } else if *val >= 0.5 {
-                inp_colors.push(Color::Indexed(104));
             } else if *val >= 0.15 {
                 inp_colors.push(Color::Indexed(104));
             } else {
@@ -541,7 +543,7 @@ impl TermViz {
         let mut layer_3_idx = 0;
         let mut layer_4_idx = 0;
 
-        for parts in network.iter() {
+        for parts in &network {
             let mut line_spans = Vec::new();
             let parts_len = parts.len();
             for (i, part) in parts.iter().enumerate() {
@@ -591,14 +593,8 @@ impl TermViz {
 impl TermViz {
     fn display_game_blocks(game: &Game) -> impl Widget {
         let mut lines = Vec::new();
-        let body_color = match game.is_dead {
-            true => COLOR_DEAD,
-            false => COLOR_BODY,
-        };
-        let head_color = match game.is_dead {
-            true => COLOR_DEAD,
-            false => COLOR_HEAD,
-        };
+        let body_color = if game.is_dead { COLOR_DEAD } else { COLOR_BODY };
+        let head_color = if game.is_dead { COLOR_DEAD } else { COLOR_HEAD };
 
         for x in 0..=GRID_SIZE {
             let mut line_spans = Vec::new();
@@ -654,22 +650,24 @@ impl<'a> GameRender<'a> {
     }
 
     fn draw_snake(&self, painter: &mut Painter) {
-        let body_color = match self.game.is_dead {
-            true => COLOR_DEAD,
-            false => COLOR_BODY,
+        let body_color = if self.game.is_dead {
+            COLOR_DEAD
+        } else {
+            COLOR_BODY
         };
-        let head_color = match self.game.is_dead {
-            true => COLOR_DEAD,
-            false => COLOR_HEAD,
+        let head_color = if self.game.is_dead {
+            COLOR_DEAD
+        } else {
+            COLOR_HEAD
         };
         for &segment in &self.game.body {
-            self.draw_rect(painter, segment.into(), body_color);
+            self.draw_rect(painter, segment, body_color);
         }
-        self.draw_rect(painter, self.game.head.into(), head_color);
+        self.draw_rect(painter, self.game.head, head_color);
     }
 
     fn draw_food(&self, painter: &mut Painter) {
-        self.draw_rect(painter, self.game.food.into(), COLOR_FOOD);
+        self.draw_rect(painter, self.game.food, COLOR_FOOD);
     }
 }
 
