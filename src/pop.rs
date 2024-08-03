@@ -9,7 +9,10 @@ use rayon::prelude::*;
 
 use crate::agent::Agent;
 use crate::nn::Net;
-use crate::{GRID_SIZE, IS_LOAD_SAVED_DATA, NN_ARCH, NUM_AGENTS, POP_NUM_RANDOM, POP_RETAINED, POP_RETAINED_MUTATED, POP_ROULETTE, POP_TOURNAMENT};
+use crate::{
+    GRID_SIZE, IS_LOAD_SAVED_DATA, NN_ARCH, NUM_AGENTS, POP_NUM_RANDOM, POP_RETAINED,
+    POP_RETAINED_MUTATED, POP_ROULETTE, POP_TOURNAMENT,
+};
 
 pub struct Population {
     pub mutation_magnitude: f64,
@@ -25,7 +28,8 @@ impl Default for Population {
 }
 
 impl Population {
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         let mut agents = Vec::new();
         for _ in 0..NUM_AGENTS {
             agents.push(Agent::new(IS_LOAD_SAVED_DATA));
@@ -45,11 +49,7 @@ impl Population {
             .par_iter_mut()
             .map(|a| {
                 a.update();
-                if a.game.is_dead {
-                    1
-                } else {
-                    0
-                }
+                usize::from(a.game.is_dead)
             })
             .sum::<usize>();
 
@@ -60,7 +60,8 @@ impl Population {
         self.reset_pop();
     }
 
-    #[must_use] pub fn get_gen_summary(&self) -> (Net, usize) {
+    #[must_use]
+    pub fn get_gen_summary(&self) -> (Net, usize) {
         let mut max_score = 0;
         let mut best_net = None;
 
@@ -87,7 +88,7 @@ impl Population {
             .map(|a| a.game.score())
             .max()
             .unwrap_or(0);
-        let (mutation_mag, mutation_rate) = self.get_mutation_params(gen_max_score as f64);
+        let (mutation_mag, mutation_rate) = Self::get_mutation_params(gen_max_score as f64);
 
         // Sort agents based on their fitness
         let mut agents_sorted = self.agents.clone();
@@ -198,7 +199,7 @@ impl Population {
         WeightedIndex::new(&weights).ok()
     }
 
-    fn get_mutation_params(&self, gen_max: f64) -> (f64, f64) {
+    fn get_mutation_params(gen_max: f64) -> (f64, f64) {
         let max_score = f64::from((GRID_SIZE - 1) * (GRID_SIZE - 1));
         if gen_max > 0.75 * max_score {
             (0.1, 0.15)

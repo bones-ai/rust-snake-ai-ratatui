@@ -20,7 +20,11 @@ use crate::agent::Agent;
 use crate::game::Game;
 use crate::nn::Net;
 use crate::sim::GenerationSummary;
-use crate::{FourDirs, GRID_SIZE, IS_LOAD_SAVED_DATA, IS_LOW_DETAIL_MODE, IS_SAVE_BEST_NET, NN_ARCH, NUM_AGENTS, NUM_STEPS, Point, USE_GAME_CANVAS, VIZ_GAME_SCALE, VIZ_GRAPHS_LEN, VIZ_OFFSET, VIZ_UPDATE_FRAMES};
+use crate::{
+    FourDirs, Point, GRID_SIZE, IS_LOAD_SAVED_DATA, IS_LOW_DETAIL_MODE, IS_SAVE_BEST_NET, NN_ARCH,
+    NUM_AGENTS, NUM_STEPS, USE_GAME_CANVAS, VIZ_GAME_SCALE, VIZ_GRAPHS_LEN, VIZ_OFFSET,
+    VIZ_UPDATE_FRAMES,
+};
 
 const COLOR_WALLS: Color = Color::Indexed(137);
 const COLOR_BODY: Color = Color::Indexed(140);
@@ -589,14 +593,8 @@ impl TermViz {
 impl TermViz {
     fn display_game_blocks(game: &Game) -> impl Widget {
         let mut lines = Vec::new();
-        let body_color = match game.is_dead {
-            true => COLOR_DEAD,
-            false => COLOR_BODY,
-        };
-        let head_color = match game.is_dead {
-            true => COLOR_DEAD,
-            false => COLOR_HEAD,
-        };
+        let body_color = if game.is_dead { COLOR_DEAD } else { COLOR_BODY };
+        let head_color = if game.is_dead { COLOR_DEAD } else { COLOR_HEAD };
 
         for x in 0..=GRID_SIZE {
             let mut line_spans = Vec::new();
@@ -652,13 +650,15 @@ impl<'a> GameRender<'a> {
     }
 
     fn draw_snake(&self, painter: &mut Painter) {
-        let body_color = match self.game.is_dead {
-            true => COLOR_DEAD,
-            false => COLOR_BODY,
+        let body_color = if self.game.is_dead {
+            COLOR_DEAD
+        } else {
+            COLOR_BODY
         };
-        let head_color = match self.game.is_dead {
-            true => COLOR_DEAD,
-            false => COLOR_HEAD,
+        let head_color = if self.game.is_dead {
+            COLOR_DEAD
+        } else {
+            COLOR_HEAD
         };
         for &segment in &self.game.body {
             self.draw_rect(painter, segment, body_color);
