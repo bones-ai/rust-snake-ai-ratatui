@@ -12,7 +12,7 @@ use std::{
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::*;
+use crate::{IS_SAVE_BEST_NET, LOAD_FILE_NAME, SAVE_FILE_NAME};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Net {
@@ -32,7 +32,7 @@ struct Node {
 }
 
 impl Net {
-    pub fn new(layer_sizes: &[usize]) -> Self {
+    #[must_use] pub fn new(layer_sizes: &[usize]) -> Self {
         assert!(layer_sizes.len() >= 2, "Need at least 2 layers");
         assert!(
             layer_sizes.iter().all(|&size| size > 0),
@@ -43,7 +43,7 @@ impl Net {
         let first_layer_size = *layer_sizes.first().unwrap();
         let mut prev_layer_size = first_layer_size;
 
-        for &layer_size in layer_sizes[1..].iter() {
+        for &layer_size in &layer_sizes[1..] {
             layers.push(Layer::new(layer_size, prev_layer_size));
             prev_layer_size = layer_size;
         }
@@ -54,7 +54,7 @@ impl Net {
         }
     }
 
-    pub fn merge(&self, other: &Net) -> Self {
+    #[must_use] pub fn merge(&self, other: &Net) -> Self {
         assert_eq!(self.layers.len(), other.layers.len());
 
         let mut merged_layers = Vec::new();
@@ -69,7 +69,7 @@ impl Net {
         }
     }
 
-    pub fn predict(&self, inputs: Vec<f64>) -> Vec<f64> {
+    #[must_use] pub fn predict(&self, inputs: Vec<f64>) -> Vec<f64> {
         assert!(
             inputs.len() == self.n_inputs,
             "Bad input size, expected {:?} but got {:?}",
@@ -102,7 +102,7 @@ impl Net {
                     create_dir_all(path.parent().unwrap()).unwrap();
                     File::create(path).unwrap()
                 } else {
-                    panic!("Unexpected error: {}", err);
+                    panic!("Unexpected error: {err}");
                 }
             }
         };
@@ -112,7 +112,7 @@ impl Net {
             .expect("Failed to write to network file");
     }
 
-    pub fn load() -> Self {
+    #[must_use] pub fn load() -> Self {
         let mut file = File::open(LOAD_FILE_NAME).unwrap();
         let mut buff = String::new();
         file.read_to_string(&mut buff).unwrap();
@@ -120,9 +120,9 @@ impl Net {
     }
 
     // This is for visualization
-    pub fn get_bias(&self, layer_idx: usize) -> Vec<f64> {
+    #[must_use] pub fn get_bias(&self, layer_idx: usize) -> Vec<f64> {
         let mut res = Vec::new();
-        for node in self.layers[layer_idx].nodes.iter() {
+        for node in &self.layers[layer_idx].nodes {
             res.push(node.bias);
         }
 
@@ -175,7 +175,7 @@ impl Layer {
 
     fn predict(&self, inputs: &[f64]) -> Vec<f64> {
         let mut layer_results = Vec::new();
-        for node in self.nodes.iter() {
+        for node in &self.nodes {
             let mut weighted_sum = node.bias;
             for (weight, value) in node.weights.iter().zip(inputs.iter()) {
                 weighted_sum += weight * value;
@@ -190,8 +190,8 @@ impl Layer {
 
     fn mutate(&mut self, rate: f64, magnitude: f64) {
         let mut rng = rand::thread_rng();
-        for node in self.nodes.iter_mut() {
-            for val in node.weights.iter_mut() {
+        for node in &mut self.nodes {
+            for val in &mut node.weights {
                 if rng.gen::<f64>() >= rate {
                     continue;
                 }

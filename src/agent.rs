@@ -4,7 +4,7 @@
 use nn::Net;
 
 use crate::game::Game;
-use crate::*;
+use crate::{FourDirs, NN_ARCH, NUM_STEPS, Point, get_eight_dirs, nn};
 
 #[derive(Clone)]
 pub struct Agent {
@@ -13,7 +13,7 @@ pub struct Agent {
 }
 
 impl Agent {
-    pub fn new(is_load: bool) -> Self {
+    #[must_use] pub fn new(is_load: bool) -> Self {
         let brain = if is_load {
             let mut net = Net::load();
             net.mutate(0.0, 0.1);
@@ -28,7 +28,7 @@ impl Agent {
         }
     }
 
-    pub fn with_brain(brain: Net) -> Self {
+    #[must_use] pub fn with_brain(brain: Net) -> Self {
         Self {
             game: Game::new(),
             brain,
@@ -51,7 +51,7 @@ impl Agent {
         true
     }
 
-    pub fn fitness(&self) -> f32 {
+    #[must_use] pub fn fitness(&self) -> f32 {
         let score = self.game.body.len() as f32;
         if score <= 1.0 {
             return 1.0;
@@ -70,7 +70,7 @@ impl Agent {
         fitness
     }
 
-    pub fn get_brain_output(&self) -> FourDirs {
+    #[must_use] pub fn get_brain_output(&self) -> FourDirs {
         let vision = self.get_brain_input();
         let nn_out = self.brain.predict(vision);
         let (l, r, b, t) = (nn_out[0], nn_out[1], nn_out[2], nn_out[3]);
@@ -84,7 +84,7 @@ impl Agent {
         directions[0].1
     }
 
-    pub fn get_brain_input(&self) -> Vec<f64> {
+    #[must_use] pub fn get_brain_input(&self) -> Vec<f64> {
         let dirs = get_eight_dirs().to_vec();
         let vision = self.get_snake_vision(dirs);
         let head_dir = self.game.dir.get_one_hot_dir();
@@ -99,7 +99,7 @@ impl Agent {
         for d in dirs {
             // Food and Body are one hot
             let (solid, _food) = self.vision_in_dir(self.game.head, d);
-            vision.push(solid as f64);
+            vision.push(f64::from(solid));
             vision.push(if _food { 1.0 } else { 0.0 });
         }
 
@@ -131,7 +131,7 @@ impl Agent {
         (1.0 / dist as f32, food)
     }
 
-    pub fn get_step_limit(&self) -> usize {
+    #[must_use] pub fn get_step_limit(&self) -> usize {
         match self.game.score() {
             score if score > 30 => NUM_STEPS * 6,
             score if score > 20 => NUM_STEPS * 3,

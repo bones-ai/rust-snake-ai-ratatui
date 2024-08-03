@@ -20,7 +20,7 @@ use crate::agent::Agent;
 use crate::game::Game;
 use crate::nn::Net;
 use crate::sim::GenerationSummary;
-use crate::*;
+use crate::{FourDirs, GRID_SIZE, IS_LOAD_SAVED_DATA, IS_LOW_DETAIL_MODE, IS_SAVE_BEST_NET, NN_ARCH, NUM_AGENTS, NUM_STEPS, Point, USE_GAME_CANVAS, VIZ_GAME_SCALE, VIZ_GRAPHS_LEN, VIZ_OFFSET, VIZ_UPDATE_FRAMES};
 
 const COLOR_WALLS: Color = Color::Indexed(137);
 const COLOR_BODY: Color = Color::Indexed(140);
@@ -262,7 +262,7 @@ impl TermViz {
             format!("Net Arch: {:?}", NN_ARCH),
             format!("Save Net: {IS_SAVE_BEST_NET}"),
             format!("Load Net: {IS_LOAD_SAVED_DATA}"),
-            "".to_string(),
+            String::new(),
             "Press [ESC] to quit".to_string(),
         ];
 
@@ -278,14 +278,14 @@ impl TermViz {
     }
 
     fn render_viz_score_gauge(score: usize) -> impl Widget {
-        let ratio = score as f64 / ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
+        let ratio = score as f64 / f64::from((GRID_SIZE - 1) * (GRID_SIZE - 1));
         let ratio = ratio.clamp(0.0, 1.0);
         let title = "  V I Z    S C O R E  ";
         TermViz::widget_gauge(ratio, title, Color::LightMagenta)
     }
 
     fn render_max_score_gauge(score: usize) -> impl Widget {
-        let ratio = score as f64 / ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
+        let ratio = score as f64 / f64::from((GRID_SIZE - 1) * (GRID_SIZE - 1));
         let ratio = ratio.clamp(0.0, 1.0);
         let title = "  M A X    S C O R E  ";
         TermViz::widget_gauge(ratio, title, Color::LightRed)
@@ -539,7 +539,7 @@ impl TermViz {
         let mut layer_3_idx = 0;
         let mut layer_4_idx = 0;
 
-        for parts in network.iter() {
+        for parts in &network {
             let mut line_spans = Vec::new();
             let parts_len = parts.len();
             for (i, part) in parts.iter().enumerate() {

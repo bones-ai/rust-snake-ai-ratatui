@@ -1,7 +1,7 @@
 //! Snake Game
 //! Handles all game related logic
 
-use crate::*;
+use crate::{FourDirs, GRID_SIZE, Point};
 
 #[derive(Clone)]
 pub struct Game {
@@ -22,7 +22,7 @@ impl Default for Game {
 }
 
 impl Game {
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         let head = Point::new(GRID_SIZE / 2, GRID_SIZE / 2);
         let mut body = vec![head];
         body.push(Point::new(head.x - 1, head.y));
@@ -54,15 +54,15 @@ impl Game {
         }
     }
 
-    pub fn score(&self) -> usize {
+    #[must_use] pub fn score(&self) -> usize {
         self.body.len()
     }
 
-    pub fn is_wall(&self, pt: Point) -> bool {
+    #[must_use] pub fn is_wall(&self, pt: Point) -> bool {
         pt.x >= GRID_SIZE || pt.x <= 0 || pt.y >= GRID_SIZE || pt.y <= 0
     }
 
-    pub fn is_snake_body(&self, pt: Point) -> bool {
+    #[must_use] pub fn is_snake_body(&self, pt: Point) -> bool {
         // skip head
         self.body[1..].contains(&pt)
     }

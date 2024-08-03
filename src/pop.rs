@@ -9,7 +9,7 @@ use rayon::prelude::*;
 
 use crate::agent::Agent;
 use crate::nn::Net;
-use crate::*;
+use crate::{GRID_SIZE, IS_LOAD_SAVED_DATA, NN_ARCH, NUM_AGENTS, POP_NUM_RANDOM, POP_RETAINED, POP_RETAINED_MUTATED, POP_ROULETTE, POP_TOURNAMENT};
 
 pub struct Population {
     pub mutation_magnitude: f64,
@@ -25,7 +25,7 @@ impl Default for Population {
 }
 
 impl Population {
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         let mut agents = Vec::new();
         for _ in 0..NUM_AGENTS {
             agents.push(Agent::new(IS_LOAD_SAVED_DATA));
@@ -60,11 +60,11 @@ impl Population {
         self.reset_pop();
     }
 
-    pub fn get_gen_summary(&self) -> (Net, usize) {
+    #[must_use] pub fn get_gen_summary(&self) -> (Net, usize) {
         let mut max_score = 0;
         let mut best_net = None;
 
-        for a in self.agents.iter() {
+        for a in &self.agents {
             let score = a.game.score();
             if score > max_score {
                 max_score = score;
@@ -181,7 +181,7 @@ impl Population {
         let mut max_fitness = 0.0;
         let mut weights = Vec::new();
 
-        for a in self.agents.iter() {
+        for a in &self.agents {
             let fitness = a.fitness();
             if fitness > max_fitness {
                 max_fitness = fitness;
@@ -199,7 +199,7 @@ impl Population {
     }
 
     fn get_mutation_params(&self, gen_max: f64) -> (f64, f64) {
-        let max_score = ((GRID_SIZE - 1) * (GRID_SIZE - 1)) as f64;
+        let max_score = f64::from((GRID_SIZE - 1) * (GRID_SIZE - 1));
         if gen_max > 0.75 * max_score {
             (0.1, 0.15)
         } else if gen_max > 0.5 * max_score {
